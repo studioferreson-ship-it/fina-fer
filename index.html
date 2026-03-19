@@ -5,17 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dash Fina Fer 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e0e0e0;min-height:100vh;}
-#upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;padding:24px;}
-.upload-box{border:2px dashed #2a2d3e;border-radius:16px;padding:48px 64px;text-align:center;cursor:pointer;transition:all .2s;background:#161b27;width:100%;max-width:420px;}
-.upload-box:hover,.upload-box.over{border-color:#7c6cf7;background:#1a1f35;}
-.upload-icon{font-size:2.5rem;margin-bottom:16px;}
-.upload-title{font-size:1rem;font-weight:600;margin-bottom:8px;}
-.upload-sub{font-size:.8rem;color:#555;}
-#upload-err{color:#f87171;font-size:.8rem;}
+#loading-area{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;}
+.loading-icon{font-size:2.5rem;animation:spin 2s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg)}}
+.loading-title{font-size:.9rem;color:#555;letter-spacing:2px;text-transform:uppercase;}
+#load-err{color:#f87171;font-size:.8rem;text-align:center;max-width:400px;}
 #dash{display:none;padding:24px;}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 h1{font-size:1.1rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;}
@@ -28,7 +25,7 @@ h1 span{color:#7c6cf7;}
 .fpill:hover{border-color:#7c6cf7;color:#aaa;}
 .fpill.active{background:#7c6cf7;color:#fff;border-color:#7c6cf7;}
 .top-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
-.card{background:#161b27;border-radius:14px;padding:22px 24px;border:1px solid #1e2535;position:relative;overflow:hidden;transition:border-color .2s;}
+.card{background:#161b27;border-radius:14px;padding:22px 24px;border:1px solid #1e2535;position:relative;overflow:hidden;}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
 .c-e::before{background:linear-gradient(90deg,#22c55e,#4ade80);}
 .c-s::before{background:linear-gradient(90deg,#ef4444,#f87171);}
@@ -73,21 +70,17 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 </head>
 <body>
 
-<div id="upload-area">
+<div id="loading-area">
   <h1>DASH <span>FINA FER</span></h1>
-  <div class="upload-box" id="drop-zone" onclick="document.getElementById('finput').click()">
-    <div class="upload-icon">📊</div>
-    <div class="upload-title">Carregar Planilha</div>
-    <div class="upload-sub">Clique ou arraste o arquivo .xlsx aqui</div>
-  </div>
-  <input type="file" id="finput" accept=".xlsx,.xls" style="display:none"/>
-  <div id="upload-err"></div>
+  <div class="loading-icon">⚙️</div>
+  <div class="loading-title">Carregando dados...</div>
+  <div id="load-err"></div>
 </div>
 
 <div id="dash">
   <div class="topbar">
     <h1>DASH <span>FINA FER</span></h1>
-    <button class="reload" onclick="resetUpload()">↺ TROCAR ARQUIVO</button>
+    <button class="reload" onclick="iniciar()">↺ ATUALIZAR</button>
   </div>
 
   <div class="filter-bar">
@@ -158,6 +151,8 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 </div>
 
 <script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxA2Se7pS5o2TZncfCJDtA3UA1jeesG9b5HDm7Wep1YRScfwWp4E1j7LXMxNEiVEQAh/exec';
+
 const MES_ORD = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MES_NM  = {jan:'Janeiro',fev:'Fevereiro',mar:'Março',abr:'Abril',mai:'Maio',jun:'Junho',jul:'Julho',ago:'Agosto',set:'Setembro',out:'Outubro',nov:'Novembro',dez:'Dezembro'};
 const PALETTE = ['#f87171','#60a5fa','#fb923c','#34d399','#a78bfa','#fbbf24','#38bdf8','#f472b6','#94a3b8','#4ade80'];
@@ -169,100 +164,73 @@ let filtroMes = null;
 
 const R = v => 'R$ ' + (+v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const cleanStr = s => { const t = String(s??'').trim(); return (t===''||t.toLowerCase()==='nan')?null:t; };
-const fmtDate  = s => {
-  if(!s) return '—';
-  if(!isNaN(s) && String(s).trim()!=='') {
-    const dt = new Date(Math.round((+s-25569)*86400*1000));
-    return dt.getUTCDate().toString().padStart(2,'0')+'/'+( dt.getUTCMonth()+1).toString().padStart(2,'0');
-  }
-  const p = String(s).split('T')[0].split('-');
-  return p.length===3 ? `${p[2]}/${p[1]}` : String(s);
-};
 
-const dz = document.getElementById('drop-zone');
-const fi = document.getElementById('finput');
-dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over');});
-dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])load(e.dataTransfer.files[0]);});
-fi.addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0]);});
-
-function resetUpload(){
-  document.getElementById('upload-area').style.display='flex';
+async function iniciar() {
+  document.getElementById('loading-area').style.display='flex';
   document.getElementById('dash').style.display='none';
-  fi.value='';
+  document.getElementById('load-err').textContent='';
+
+  try {
+    const res = await fetch(API_URL);
+    const json = await res.json();
+    const rows = json.rows || [];
+    if(!rows.length) throw new Error('Nenhum dado retornado pela planilha.');
+    DATA = parse(rows);
+    render();
+    document.getElementById('loading-area').style.display='none';
+    document.getElementById('dash').style.display='block';
+  } catch(err) {
+    document.getElementById('load-err').textContent='Erro ao carregar: ' + err.message;
+  }
 }
 
-function load(file){
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
-      const sn=wb.SheetNames.find(n=>n.toUpperCase().includes('DADO'))||wb.SheetNames[0];
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});
-      if(!rows.length) throw new Error('Planilha vazia');
-      DATA=parse(rows);
-      render();
-      document.getElementById('upload-area').style.display='none';
-      document.getElementById('dash').style.display='block';
-    }catch(err){
-      document.getElementById('upload-err').textContent='Erro: '+err.message;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function parse(rows){
+function parse(rows) {
   const monthly={};
   const gD={}, gR={};
   const rawRows=[];
 
-  rows.forEach(row=>{
+  rows.forEach(row => {
     const mes  = cleanStr(row['MES']??row['mes']);
     const cat  = cleanStr(row['CATEGORIA']??row['categoria']);
-    let grp    = cleanStr(row['GRUPO']??row['grupo'])||'NÃO CATEG.';
-    let sub    = cleanStr(row['SUBGRUPO']??row['subgrupo'])||'NÃO CATEG.';
+    const grp  = cleanStr(row['GRUPO']??row['grupo'])||'NÃO CATEG.';
+    const sub  = cleanStr(row['SUBGRUPO']??row['subgrupo'])||'NÃO CATEG.';
     const val  = parseFloat(row['VALOR']??row['valor'])||0;
-    const desc = cleanStr(row['DESCRICAO']??row['descricao'])?? '—';
-    const obs  = cleanStr(row['OBS']??row['obs'])??'';
-    const dataRaw = row['DATA COMP']??row['DATA']??row['data']??'';
+    const desc = cleanStr(row['DESCRICAO']??row['descricao'])||'—';
+    const obs  = cleanStr(row['OBS']??row['obs'])||'';
+    const data = cleanStr(row['DATA COMP']??row['DATA']??row['data'])||'—';
 
     if(!mes||!cat||!val) return;
-    const catUp=cat.toUpperCase();
+    const catUp = cat.toUpperCase();
     if(catUp!=='RECEITA'&&catUp!=='DESPESA') return;
 
-    let dataFmt='—';
-    if(dataRaw instanceof Date){
-      dataFmt=dataRaw.getUTCDate().toString().padStart(2,'0')+'/'+(dataRaw.getUTCMonth()+1).toString().padStart(2,'0');
-    } else { dataFmt=fmtDate(dataRaw); }
-
-    rawRows.push({mes,cat:catUp,grp,sub,val,desc,obs,data:dataFmt});
+    rawRows.push({mes,cat:catUp,grp,sub,val,desc,obs,data});
 
     if(!monthly[mes]) monthly[mes]={e:0,s:0};
-    const target=catUp==='RECEITA'?gR:gD;
+    const target = catUp==='RECEITA'?gR:gD;
     if(catUp==='RECEITA') monthly[mes].e+=val;
     else                  monthly[mes].s+=val;
 
-    if(!target[grp])      target[grp]={total:0,subs:{}};
-    target[grp].total    +=val;
-    target[grp].subs[sub]=(target[grp].subs[sub]||0)+val;
+    if(!target[grp])       target[grp]={total:0,subs:{}};
+    target[grp].total     +=val;
+    target[grp].subs[sub] =(target[grp].subs[sub]||0)+val;
   });
 
-  const meses=MES_ORD.filter(m=>monthly[m]&&(monthly[m].e||monthly[m].s));
-  let acum=0;
-  const mesesData=meses.map(m=>{
-    acum=+(acum+monthly[m].e-monthly[m].s).toFixed(2);
-    return{mes:m,e:+monthly[m].e.toFixed(2),s:+monthly[m].s.toFixed(2),saldo:acum};
+  const meses = MES_ORD.filter(m=>monthly[m]&&(monthly[m].e||monthly[m].s));
+  let acum = 0;
+  const mesesData = meses.map(m => {
+    acum = +(acum+monthly[m].e-monthly[m].s).toFixed(2);
+    return {mes:m, e:+monthly[m].e.toFixed(2), s:+monthly[m].s.toFixed(2), saldo:acum};
   });
 
-  const toArr=obj=>Object.entries(obj)
-    .map(([nome,d],i)=>({nome,cor:PALETTE[i%PALETTE.length],total:+d.total.toFixed(2),
+  const toArr = obj => Object.entries(obj)
+    .map(([nome,d],i) => ({nome, cor:PALETTE[i%PALETTE.length], total:+d.total.toFixed(2),
       subs:Object.entries(d.subs).map(([n,v])=>({nome:n,valor:+v.toFixed(2)})).sort((a,b)=>b.valor-a.valor)}))
     .sort((a,b)=>b.total-a.total);
 
-  return{mesesData,periodo:meses.map(m=>MES_NM[m]||m).join(' · '),despesa:toArr(gD),receita:toArr(gR),rawRows};
+  return {mesesData, periodo:meses.map(m=>MES_NM[m]||m).join(' · '), despesa:toArr(gD), receita:toArr(gR), rawRows};
 }
 
-function render(){
+function render() {
   const {mesesData} = DATA;
   filtroMes = null;
 
@@ -271,16 +239,16 @@ function render(){
   pillsDiv.style.display='flex';
   pillsDiv.style.gap='8px';
   pillsDiv.style.flexWrap='wrap';
-  mesesData.forEach(m=>{
-    const btn=document.createElement('button');
+  mesesData.forEach(m => {
+    const btn = document.createElement('button');
     btn.className='fpill';
-    btn.textContent=MES_NM[m.mes]||m.mes;
-    btn.onclick=()=>setFiltro(m.mes,btn);
+    btn.textContent = MES_NM[m.mes]||m.mes;
+    btn.onclick = ()=>setFiltro(m.mes,btn);
     pillsDiv.appendChild(btn);
   });
 
   if(chartInst) chartInst.destroy();
-  chartInst=new Chart(document.getElementById('chart').getContext('2d'),{
+  chartInst = new Chart(document.getElementById('chart').getContext('2d'),{
     type:'bar',
     data:{
       labels:mesesData.map(m=>MES_NM[m.mes]||m.mes),
@@ -309,17 +277,17 @@ function render(){
   document.getElementById('trans-card').style.display='none';
 }
 
-function setFiltro(mes, btn){
-  filtroMes=mes;
+function setFiltro(mes, btn) {
+  filtroMes = mes;
   document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
 
-  const {mesesData}=DATA;
-  if(mes){
-    const idx=mesesData.findIndex(m=>m.mes===mes);
-    chartInst.data.datasets.forEach(ds=>{
-      ds.backgroundColor=ds.data.map((_,i)=>{
-        const base=ds.label==='Entradas'?'74,222,128':ds.label==='Saídas'?'248,113,113':
+  const {mesesData} = DATA;
+  if(mes) {
+    const idx = mesesData.findIndex(m=>m.mes===mes);
+    chartInst.data.datasets.forEach(ds => {
+      ds.backgroundColor = ds.data.map((_,i) => {
+        const base = ds.label==='Entradas'?'74,222,128':ds.label==='Saídas'?'248,113,113':
           (mesesData[i].saldo>=0?'167,139,250':'239,68,68');
         return i===idx?`rgba(${base},1)`:`rgba(${base},.2)`;
       });
@@ -333,12 +301,12 @@ function setFiltro(mes, btn){
   updateCards(mes);
 }
 
-function updateCards(mes){
-  const {mesesData,periodo}=DATA;
-  if(!mes){
-    const totalE=mesesData.reduce((a,m)=>a+m.e,0);
-    const totalS=mesesData.reduce((a,m)=>a+m.s,0);
-    const saldoF=mesesData.length?mesesData[mesesData.length-1].saldo:0;
+function updateCards(mes) {
+  const {mesesData,periodo} = DATA;
+  if(!mes) {
+    const totalE = mesesData.reduce((a,m)=>a+m.e,0);
+    const totalS = mesesData.reduce((a,m)=>a+m.s,0);
+    const saldoF = mesesData.length?mesesData[mesesData.length-1].saldo:0;
     document.getElementById('v-e').textContent=R(totalE);
     document.getElementById('v-s').textContent=R(totalS);
     document.getElementById('sub-e').textContent=periodo;
@@ -363,7 +331,7 @@ function updateCards(mes){
   }
 }
 
-function setTipo(tipo,btn){
+function setTipo(tipo,btn) {
   tipoAtual=tipo;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
@@ -374,12 +342,12 @@ function setTipo(tipo,btn){
   renderGrupos();
 }
 
-function renderGrupos(){
-  const grupos=DATA[tipoAtual];
-  const max=Math.max(...grupos.map(g=>g.total));
-  const tbody=document.getElementById('tbl-grupo');
+function renderGrupos() {
+  const grupos = DATA[tipoAtual];
+  const max = Math.max(...grupos.map(g=>g.total));
+  const tbody = document.getElementById('tbl-grupo');
   tbody.innerHTML='';
-  grupos.forEach(g=>{
+  grupos.forEach(g => {
     const pct=(g.total/max*100).toFixed(0);
     const tr=document.createElement('tr');
     tr.innerHTML=`
@@ -391,7 +359,7 @@ function renderGrupos(){
   });
 }
 
-function selectGrupo(g,tr){
+function selectGrupo(g,tr) {
   document.querySelectorAll('#tbl-grupo tr').forEach(r=>r.classList.remove('active'));
   tr.classList.add('active');
   document.getElementById('sub-title').textContent='Subgrupos — '+g.nome;
@@ -399,7 +367,7 @@ function selectGrupo(g,tr){
   const max=Math.max(...g.subs.map(s=>s.valor));
   const tbody=document.getElementById('tbl-sub');
   tbody.innerHTML='';
-  g.subs.forEach(s=>{
+  g.subs.forEach(s => {
     const pct=(s.valor/max*100).toFixed(0);
     const tr2=document.createElement('tr');
     tr2.innerHTML=`
@@ -411,7 +379,7 @@ function selectGrupo(g,tr){
   });
 }
 
-function selectSub(g,s,tr){
+function selectSub(g,s,tr) {
   document.querySelectorAll('#tbl-sub tr').forEach(r=>r.classList.remove('active'));
   tr.classList.add('active');
   const cat=tipoAtual==='despesa'?'DESPESA':'RECEITA';
@@ -427,7 +395,7 @@ function selectSub(g,s,tr){
     `${rows.length} lançamento${rows.length!==1?'s':''} · ${R(total)}`;
   const tbody=document.getElementById('tbl-trans');
   tbody.innerHTML='';
-  rows.forEach(r=>{
+  rows.forEach(r => {
     const obs=r.obs&&r.obs.toLowerCase()!=='nan'?r.obs:'';
     tbody.innerHTML+=`
       <tr>
@@ -442,6 +410,8 @@ function selectSub(g,s,tr){
   card.style.display='block';
   card.scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+iniciar();
 </script>
 </body>
 </html>
