@@ -180,248 +180,249 @@ let tipoAtual = 'receita';
 let filtroMes = null;
 
 const R = v => 'R$ ' + (+v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const cleanStr = s => { const t = String(s??'').trim(); return (t===''||t.toLowerCase()==='nan')?null:t; };
-const fmtData = s => {
-  if(!s || s==='—') return '—';
+const cleanStr = s => { const t = String(s ?? '').trim(); return (t === '' || t.toLowerCase() === 'nan') ? null : t; };
+
+function fmtData(s) {
+  if (!s || s === '—') return '—';
   const str = String(s).trim();
-  if(str.includes('T') || str.match(/
-^
-\d{4}-\d{2}-\d{2}/)) {
+  if (str.indexOf('T') !== -1) {
     const d = new Date(str);
-    if(!isNaN(d)) return d.getUTCDate().toString().padStart(2,'0') + '/' + (d.getUTCMonth()+1).toString().padStart(2,'0');
+    if (!isNaN(d.getTime())) {
+      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
+    }
+  }
+  if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
+    }
   }
   return str;
-};
+}
 
 async function iniciar() {
-  document.getElementById('loading-area').style.display='flex';
-  document.getElementById('dash').style.display='none';
-  document.getElementById('load-err').textContent='';
+  document.getElementById('loading-area').style.display = 'flex';
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('load-err').textContent = '';
   try {
     const res  = await fetch(API_URL);
     const json = await res.json();
     const rows = json.rows || [];
-    if(!rows.length) throw new Error('Nenhum dado retornado.');
+    if (!rows.length) throw new Error('Nenhum dado retornado.');
     DATA = parse(rows);
     render();
-    document.getElementById('loading-area').style.display='none';
-    document.getElementById('dash').style.display='block';
+    document.getElementById('loading-area').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
   } catch(err) {
-    document.getElementById('load-err').textContent='Erro: '+err.message;
+    document.getElementById('load-err').textContent = 'Erro: ' + err.message;
   }
 }
 
 function parse(rows) {
-  const monthly={}, gD={}, gR={}, rawRows=[];
+  const monthly = {}, gD = {}, gR = {}, rawRows = [];
   rows.forEach(row => {
-    const mes  = cleanStr(row['MES']??row['mes']);
-    const cat  = cleanStr(row['CATEGORIA']??row['categoria']);
-    const grp  = cleanStr(row['GRUPO']??row['grupo'])||'NÃO CATEG.';
-    const sub  = cleanStr(row['SUBGRUPO']??row['subgrupo'])||'NÃO CATEG.';
-    const val  = parseFloat(row['VALOR']??row['valor'])||0;
-    const desc = cleanStr(row['DESCRICAO']??row['descricao'])||'—';
-    const obs  = cleanStr(row['OBS']??row['obs'])||'';
-    const data = fmtData(cleanStr(row['DATA COMP']??row['DATA']??row['data']));
-
-    if(!mes||!cat||!val) return;
+    const mes  = cleanStr(row['MES'] ?? row['mes']);
+    const cat  = cleanStr(row['CATEGORIA'] ?? row['categoria']);
+    const grp  = cleanStr(row['GRUPO'] ?? row['grupo']) || 'NÃO CATEG.';
+    const sub  = cleanStr(row['SUBGRUPO'] ?? row['subgrupo']) || 'NÃO CATEG.';
+    const val  = parseFloat(row['VALOR'] ?? row['valor']) || 0;
+    const desc = cleanStr(row['DESCRICAO'] ?? row['descricao']) || '—';
+    const obs  = cleanStr(row['OBS'] ?? row['obs']) || '';
+    const data = fmtData(cleanStr(row['DATA COMP'] ?? row['DATA'] ?? row['data']));
+    if (!mes || !cat || !val) return;
     const catUp = cat.toUpperCase();
-    if(catUp!=='RECEITA'&&catUp!=='DESPESA') return;
-
-    rawRows.push({mes,cat:catUp,grp,sub,val,desc,obs,data});
-
-    if(!monthly[mes]) monthly[mes]={e:0,s:0};
-    const target = catUp==='RECEITA'?gR:gD;
-    if(catUp==='RECEITA') monthly[mes].e+=val; else monthly[mes].s+=val;
-    if(!target[grp]) target[grp]={total:0,subs:{}};
-    target[grp].total+=val;
-    target[grp].subs[sub]=(target[grp].subs[sub]||0)+val;
+    if (catUp !== 'RECEITA' && catUp !== 'DESPESA') return;
+    rawRows.push({mes, cat: catUp, grp, sub, val, desc, obs, data});
+    if (!monthly[mes]) monthly[mes] = {e: 0, s: 0};
+    const target = catUp === 'RECEITA' ? gR : gD;
+    if (catUp === 'RECEITA') monthly[mes].e += val; else monthly[mes].s += val;
+    if (!target[grp]) target[grp] = {total: 0, subs: {}};
+    target[grp].total += val;
+    target[grp].subs[sub] = (target[grp].subs[sub] || 0) + val;
   });
-
-  const meses = MES_ORD.filter(m=>monthly[m]&&(monthly[m].e||monthly[m].s));
-  let acum=0;
-  const mesesData = meses.map(m=>{
-    acum=+(acum+monthly[m].e-monthly[m].s).toFixed(2);
-    return{mes:m,e:+monthly[m].e.toFixed(2),s:+monthly[m].s.toFixed(2),saldo:acum};
+  const meses = MES_ORD.filter(m => monthly[m] && (monthly[m].e || monthly[m].s));
+  let acum = 0;
+  const mesesData = meses.map(m => {
+    acum = +(acum + monthly[m].e - monthly[m].s).toFixed(2);
+    return {mes: m, e: +monthly[m].e.toFixed(2), s: +monthly[m].s.toFixed(2), saldo: acum};
   });
-
-  const toArr = obj=>Object.entries(obj)
-    .map(([nome,d],i)=>({nome,cor:PALETTE[i%PALETTE.length],total:+d.total.toFixed(2),
-      subs:Object.entries(d.subs).map(([n,v])=>({nome:n,valor:+v.toFixed(2)})).sort((a,b)=>b.valor-a.valor)}))
-    .sort((a,b)=>b.total-a.total);
-
-  return{mesesData,periodo:meses.map(m=>MES_NM[m]||m).join(' · '),despesa:toArr(gD),receita:toArr(gR),rawRows};
+  const toArr = obj => Object.entries(obj)
+    .map(([nome, d], i) => ({nome, cor: PALETTE[i % PALETTE.length], total: +d.total.toFixed(2),
+      subs: Object.entries(d.subs).map(([n, v]) => ({nome: n, valor: +v.toFixed(2)})).sort((a, b) => b.valor - a.valor)}))
+    .sort((a, b) => b.total - a.total);
+  return {mesesData, periodo: meses.map(m => MES_NM[m] || m).join(' · '), despesa: toArr(gD), receita: toArr(gR), rawRows};
 }
 
 function render() {
-  const {mesesData}=DATA;
-  filtroMes=null;
-  const pillsDiv=document.getElementById('mes-pills');
-  pillsDiv.innerHTML='';
-  mesesData.forEach(m=>{
-    const btn=document.createElement('button');
-    btn.className='fpill';
-    btn.textContent=MES_NM[m.mes]||m.mes;
-    btn.onclick=()=>setFiltro(m.mes,btn);
+  const {mesesData} = DATA;
+  filtroMes = null;
+  const pillsDiv = document.getElementById('mes-pills');
+  pillsDiv.innerHTML = '';
+  mesesData.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'fpill';
+    btn.textContent = MES_NM[m.mes] || m.mes;
+    btn.onclick = () => setFiltro(m.mes, btn);
     pillsDiv.appendChild(btn);
   });
-  if(chartInst) chartInst.destroy();
-  chartInst=new Chart(document.getElementById('chart').getContext('2d'),{
-    type:'bar',
-    data:{
-      labels:mesesData.map(m=>MES_NM[m.mes]||m.mes),
-      datasets:[
-        {label:'Entradas',        data:mesesData.map(m=>m.e),     backgroundColor:'rgba(74,222,128,.7)',  borderRadius:4,borderSkipped:false},
-        {label:'Saídas',          data:mesesData.map(m=>m.s),     backgroundColor:'rgba(248,113,113,.7)', borderRadius:4,borderSkipped:false},
-        {label:'Saldo Acumulado', data:mesesData.map(m=>m.saldo), backgroundColor:mesesData.map(m=>m.saldo>=0?'rgba(167,139,250,.8)':'rgba(239,68,68,.6)'),borderRadius:4,borderSkipped:false},
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById('chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: mesesData.map(m => MES_NM[m.mes] || m.mes),
+      datasets: [
+        {label:'Entradas',        data: mesesData.map(m => m.e),     backgroundColor: 'rgba(74,222,128,.7)',  borderRadius: 4, borderSkipped: false},
+        {label:'Saídas',          data: mesesData.map(m => m.s),     backgroundColor: 'rgba(248,113,113,.7)', borderRadius: 4, borderSkipped: false},
+        {label:'Saldo Acumulado', data: mesesData.map(m => m.saldo), backgroundColor: mesesData.map(m => m.saldo >= 0 ? 'rgba(167,139,250,.8)' : 'rgba(239,68,68,.6)'), borderRadius: 4, borderSkipped: false},
       ]
     },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:'#666',font:{size:10},boxWidth:12}},
-        tooltip:{callbacks:{label:c=>' '+R(c.parsed.y)}}
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {labels: {color: '#666', font: {size: 10}, boxWidth: 12}},
+        tooltip: {callbacks: {label: c => ' ' + R(c.parsed.y)}}
       },
-      scales:{
-        x:{grid:{color:'#1e2535'},ticks:{color:'#666',font:{size:9},maxRotation:45}},
-        y:{grid:{color:'#1e2535'},ticks:{color:'#666',font:{size:9},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}}
+      scales: {
+        x: {grid: {color: '#1e2535'}, ticks: {color: '#666', font: {size: 9}, maxRotation: 45}},
+        y: {grid: {color: '#1e2535'}, ticks: {color: '#666', font: {size: 9}, callback: v => 'R$' + (v / 1000).toFixed(0) + 'k'}}
       }
     }
   });
   updateCards(null);
-  tipoAtual='receita';
+  tipoAtual = 'receita';
   renderGrupos();
-  document.getElementById('trans-card').style.display='none';
+  document.getElementById('trans-card').style.display = 'none';
 }
 
-function setFiltro(mes,btn){
-  filtroMes=mes;
-  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
+function setFiltro(mes, btn) {
+  filtroMes = mes;
+  document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
-  const {mesesData}=DATA;
-  if(mes){
-    const idx=mesesData.findIndex(m=>m.mes===mes);
-    chartInst.data.datasets.forEach(ds=>{
-      ds.backgroundColor=ds.data.map((_,i)=>{
-        const base=ds.label==='Entradas'?'74,222,128':ds.label==='Saídas'?'248,113,113':(mesesData[i].saldo>=0?'167,139,250':'239,68,68');
-        return i===idx?`rgba(${base},1)`:`rgba(${base},.15)`;
+  const {mesesData} = DATA;
+  if (mes) {
+    const idx = mesesData.findIndex(m => m.mes === mes);
+    chartInst.data.datasets.forEach(ds => {
+      ds.backgroundColor = ds.data.map((_, i) => {
+        const base = ds.label === 'Entradas' ? '74,222,128' : ds.label === 'Saídas' ? '248,113,113' : (mesesData[i].saldo >= 0 ? '167,139,250' : '239,68,68');
+        return i === idx ? 'rgba(' + base + ',1)' : 'rgba(' + base + ',.15)';
       });
     });
   } else {
-    chartInst.data.datasets[0].backgroundColor='rgba(74,222,128,.7)';
-    chartInst.data.datasets[1].backgroundColor='rgba(248,113,113,.7)';
-    chartInst.data.datasets[2].backgroundColor=mesesData.map(m=>m.saldo>=0?'rgba(167,139,250,.8)':'rgba(239,68,68,.6)');
+    chartInst.data.datasets[0].backgroundColor = 'rgba(74,222,128,.7)';
+    chartInst.data.datasets[1].backgroundColor = 'rgba(248,113,113,.7)';
+    chartInst.data.datasets[2].backgroundColor = mesesData.map(m => m.saldo >= 0 ? 'rgba(167,139,250,.8)' : 'rgba(239,68,68,.6)');
   }
   chartInst.update();
   updateCards(mes);
 }
 
-function updateCards(mes){
-  const {mesesData,periodo}=DATA;
-  if(!mes){
-    const totalE=mesesData.reduce((a,m)=>a+m.e,0);
-    const totalS=mesesData.reduce((a,m)=>a+m.s,0);
-    const saldoF=mesesData.length?mesesData[mesesData.length-1].saldo:0;
-    document.getElementById('v-e').textContent=R(totalE);
-    document.getElementById('v-s').textContent=R(totalS);
-    document.getElementById('sub-e').textContent=periodo;
-    document.getElementById('sub-s').textContent=periodo;
-    document.getElementById('lbl-b').textContent='Saldo Acumulado';
-    document.getElementById('sub-b').textContent='Carregado mês a mês';
-    const vb=document.getElementById('v-b');
-    vb.textContent=(saldoF>=0?'+':'')+R(saldoF);
-    vb.style.color=saldoF<0?'#f87171':'#a78bfa';
+function updateCards(mes) {
+  const {mesesData, periodo} = DATA;
+  if (!mes) {
+    const totalE = mesesData.reduce((a, m) => a + m.e, 0);
+    const totalS = mesesData.reduce((a, m) => a + m.s, 0);
+    const saldoF = mesesData.length ? mesesData[mesesData.length - 1].saldo : 0;
+    document.getElementById('v-e').textContent = R(totalE);
+    document.getElementById('v-s').textContent = R(totalS);
+    document.getElementById('sub-e').textContent = periodo;
+    document.getElementById('sub-s').textContent = periodo;
+    document.getElementById('lbl-b').textContent = 'Saldo Acumulado';
+    document.getElementById('sub-b').textContent = 'Carregado mês a mês';
+    const vb = document.getElementById('v-b');
+    vb.textContent = (saldoF >= 0 ? '+' : '') + R(saldoF);
+    vb.style.color = saldoF < 0 ? '#f87171' : '#a78bfa';
   } else {
-    const m=mesesData.find(m=>m.mes===mes);
-    if(!m) return;
-    document.getElementById('v-e').textContent=R(m.e);
-    document.getElementById('v-s').textContent=R(m.s);
-    document.getElementById('sub-e').textContent=MES_NM[mes]||mes;
-    document.getElementById('sub-s').textContent=MES_NM[mes]||mes;
-    document.getElementById('lbl-b').textContent='Saldo Acumulado';
-    document.getElementById('sub-b').textContent=`Acumulado até ${MES_NM[mes]||mes}`;
-    const vb=document.getElementById('v-b');
-    vb.textContent=(m.saldo>=0?'+':'')+R(m.saldo);
-    vb.style.color=m.saldo<0?'#f87171':'#a78bfa';
+    const m = mesesData.find(m => m.mes === mes);
+    if (!m) return;
+    document.getElementById('v-e').textContent = R(m.e);
+    document.getElementById('v-s').textContent = R(m.s);
+    document.getElementById('sub-e').textContent = MES_NM[mes] || mes;
+    document.getElementById('sub-s').textContent = MES_NM[mes] || mes;
+    document.getElementById('lbl-b').textContent = 'Saldo Acumulado';
+    document.getElementById('sub-b').textContent = 'Acumulado até ' + (MES_NM[mes] || mes);
+    const vb = document.getElementById('v-b');
+    vb.textContent = (m.saldo >= 0 ? '+' : '') + R(m.saldo);
+    vb.style.color = m.saldo < 0 ? '#f87171' : '#a78bfa';
   }
 }
 
-function setTipo(tipo,btn){
-  tipoAtual=tipo;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+function setTipo(tipo, btn) {
+  tipoAtual = tipo;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('grupo-title').textContent='Valores por Grupo — '+(tipo==='receita'?'Receitas':'Despesas');
-  document.getElementById('tbl-sub').innerHTML='<tr><td colspan="3" class="hint">Clique em um grupo ao lado</td></tr>';
-  document.getElementById('sub-title').textContent='← Selecione um grupo';
-  document.getElementById('trans-card').style.display='none';
+  document.getElementById('grupo-title').textContent = 'Valores por Grupo — ' + (tipo === 'receita' ? 'Receitas' : 'Despesas');
+  document.getElementById('tbl-sub').innerHTML = '<tr><td colspan="3" class="hint">Clique em um grupo ao lado</td></tr>';
+  document.getElementById('sub-title').textContent = '← Selecione um grupo';
+  document.getElementById('trans-card').style.display = 'none';
   renderGrupos();
 }
 
-function renderGrupos(){
-  const grupos=DATA[tipoAtual];
-  const max=Math.max(...grupos.map(g=>g.total));
-  const tbody=document.getElementById('tbl-grupo');
-  tbody.innerHTML='';
-  grupos.forEach(g=>{
-    const pct=(g.total/max*100).toFixed(0);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td><span class="dot" style="background:${g.cor}"></span>${g.nome}</td>
-      <td><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${g.cor}"></div></div></td>
-      <td>${R(g.total)}</td>`;
-    tr.onclick=()=>selectGrupo(g,tr);
+function renderGrupos() {
+  const grupos = DATA[tipoAtual];
+  const max = Math.max(...grupos.map(g => g.total));
+  const tbody = document.getElementById('tbl-grupo');
+  tbody.innerHTML = '';
+  grupos.forEach(g => {
+    const pct = (g.total / max * 100).toFixed(0);
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><span class="dot" style="background:' + g.cor + '"></span>' + g.nome + '</td>' +
+      '<td><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + g.cor + '"></div></div></td>' +
+      '<td>' + R(g.total) + '</td>';
+    tr.onclick = () => selectGrupo(g, tr);
     tbody.appendChild(tr);
   });
 }
 
-function selectGrupo(g,tr){
-  document.querySelectorAll('#tbl-grupo tr').forEach(r=>r.classList.remove('active'));
+function selectGrupo(g, tr) {
+  document.querySelectorAll('#tbl-grupo tr').forEach(r => r.classList.remove('active'));
   tr.classList.add('active');
-  document.getElementById('sub-title').textContent='Subgrupos — '+g.nome;
-  document.getElementById('trans-card').style.display='none';
-  const max=Math.max(...g.subs.map(s=>s.valor));
-  const tbody=document.getElementById('tbl-sub');
-  tbody.innerHTML='';
-  g.subs.forEach(s=>{
-    const pct=(s.valor/max*100).toFixed(0);
-    const tr2=document.createElement('tr');
-    tr2.innerHTML=`
-      <td><span class="dot" style="background:${g.cor}"></span>${s.nome}</td>
-      <td><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${g.cor}"></div></div></td>
-      <td>${R(s.valor)}</td>`;
-    tr2.onclick=()=>selectSub(g,s,tr2);
+  document.getElementById('sub-title').textContent = 'Subgrupos — ' + g.nome;
+  document.getElementById('trans-card').style.display = 'none';
+  const max = Math.max(...g.subs.map(s => s.valor));
+  const tbody = document.getElementById('tbl-sub');
+  tbody.innerHTML = '';
+  g.subs.forEach(s => {
+    const pct = (s.valor / max * 100).toFixed(0);
+    const tr2 = document.createElement('tr');
+    tr2.innerHTML =
+      '<td><span class="dot" style="background:' + g.cor + '"></span>' + s.nome + '</td>' +
+      '<td><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + g.cor + '"></div></div></td>' +
+      '<td>' + R(s.valor) + '</td>';
+    tr2.onclick = () => selectSub(g, s, tr2);
     tbody.appendChild(tr2);
   });
 }
 
-function selectSub(g,s,tr){
-  document.querySelectorAll('#tbl-sub tr').forEach(r=>r.classList.remove('active'));
+function selectSub(g, s, tr) {
+  document.querySelectorAll('#tbl-sub tr').forEach(r => r.classList.remove('active'));
   tr.classList.add('active');
-  const cat=tipoAtual==='despesa'?'DESPESA':'RECEITA';
-  const rows=DATA.rawRows.filter(r=>r.cat===cat&&r.grp===g.nome&&r.sub===s.nome)
-    .sort((a,b)=>MES_ORD.indexOf(a.mes)-MES_ORD.indexOf(b.mes));
-  const total=rows.reduce((acc,r)=>acc+r.val,0);
-  document.getElementById('trans-title').textContent=`Transações — ${s.nome}`;
-  const badge=document.getElementById('trans-badge');
-  badge.textContent=g.nome;
-  badge.style.background=g.cor+'22';
-  badge.style.color=g.cor;
-  document.getElementById('trans-total').textContent=`${rows.length} lançamento${rows.length!==1?'s':''} · ${R(total)}`;
-  const tbody=document.getElementById('tbl-trans');
-  tbody.innerHTML='';
-  rows.forEach(r=>{
-    const obs=r.obs&&r.obs.toLowerCase()!=='nan'?r.obs:'';
-    tbody.innerHTML+=`
-      <tr>
-        <td class="td-data">${MES_NM[r.mes]||r.mes}</td>
-        <td class="td-data">${r.data}</td>
-        <td class="td-desc">${r.desc}</td>
-        <td class="td-obs">${obs}</td>
-        <td>${R(r.val)}</td>
-      </tr>`;
+  const cat = tipoAtual === 'despesa' ? 'DESPESA' : 'RECEITA';
+  const rows = DATA.rawRows.filter(r => r.cat === cat && r.grp === g.nome && r.sub === s.nome)
+    .sort((a, b) => MES_ORD.indexOf(a.mes) - MES_ORD.indexOf(b.mes));
+  const total = rows.reduce((acc, r) => acc + r.val, 0);
+  document.getElementById('trans-title').textContent = 'Transações — ' + s.nome;
+  const badge = document.getElementById('trans-badge');
+  badge.textContent = g.nome;
+  badge.style.background = g.cor + '22';
+  badge.style.color = g.cor;
+  document.getElementById('trans-total').textContent = rows.length + ' lançamento' + (rows.length !== 1 ? 's' : '') + ' · ' + R(total);
+  const tbody = document.getElementById('tbl-trans');
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const obs = r.obs && r.obs.toLowerCase() !== 'nan' ? r.obs : '';
+    tbody.innerHTML +=
+      '<tr>' +
+      '<td class="td-data">' + (MES_NM[r.mes] || r.mes) + '</td>' +
+      '<td class="td-data">' + r.data + '</td>' +
+      '<td class="td-desc">' + r.desc + '</td>' +
+      '<td class="td-obs">' + obs + '</td>' +
+      '<td>' + R(r.val) + '</td>' +
+      '</tr>';
   });
-  const card=document.getElementById('trans-card');
-  card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'start'});
+  const card = document.getElementById('trans-card');
+  card.style.display = 'block';
+  card.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 
 iniciar();
