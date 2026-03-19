@@ -40,6 +40,7 @@ h1 span{color:#7c6cf7;}
 .topbar-btns{display:flex;gap:8px;flex-wrap:wrap;}
 .reload{background:none;border:1px solid #2a2d3e;color:#555;border-radius:8px;padding:6px 14px;font-size:.72rem;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap;font-family:inherit;}
 .reload:hover{border-color:#7c6cf7;color:#7c6cf7;}
+/* O botão "Novo Lançamento" foi removido */
 .btn-novo{background:#7c6cf7;color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .2s;white-space:nowrap;font-family:inherit;}
 .btn-novo:hover{opacity:.85;}
 .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
@@ -90,29 +91,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 #trans-table .td-obs{color:#444;font-size:.7rem;font-style:italic;max-width:160px;}
 #trans-table tbody tr{cursor:default;}
 
-/* MODAL FORMULÁRIO */
-#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:16px;}
-#modal-overlay.open{display:flex;}
-.modal-box{background:#161b27;border:1px solid #2a2d3e;border-radius:18px;padding:28px 24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;}
-.modal-title{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:#7c6cf7;margin-bottom:20px;font-weight:700;}
-.modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;}
-.modal-close:hover{color:#e0e0e0;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-field{display:flex;flex-direction:column;gap:5px;}
-.form-field.full{grid-column:1/-1;}
-.form-field label{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:#555;}
-.form-field input,.form-field select,.form-field textarea{background:#0d1117;border:1px solid #2a2d3e;border-radius:8px;padding:9px 12px;color:#e0e0e0;font-size:.82rem;outline:none;transition:border .2s;font-family:inherit;width:100%;}
-.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:#7c6cf7;}
-.form-field select option{background:#161b27;}
-.form-field textarea{resize:vertical;min-height:60px;}
-.modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
-.btn-cancel{background:none;border:1px solid #2a2d3e;color:#555;border-radius:8px;padding:9px 20px;font-size:.72rem;cursor:pointer;letter-spacing:1px;font-family:inherit;transition:all .2s;}
-.btn-cancel:hover{border-color:#555;color:#aaa;}
-.btn-salvar{background:#7c6cf7;color:#fff;border:none;border-radius:8px;padding:9px 24px;font-size:.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .2s;font-family:inherit;}
-.btn-salvar:hover{opacity:.85;}
-.btn-salvar:disabled{opacity:.4;cursor:not-allowed;}
-#form-err{color:#f87171;font-size:.72rem;text-align:right;min-height:1em;margin-top:4px;}
-#form-ok{color:#4ade80;font-size:.72rem;text-align:right;min-height:1em;margin-top:4px;}
+/* O MODAL DE FORMULÁRIO FOI REMOVIDO */
 
 @media(max-width:600px){
   #dash{padding:12px;}
@@ -124,8 +103,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   .filter-bar{gap:6px;}
   #trans-table .td-obs{display:none;}
   thead th.col-obs{display:none;}
-  .form-grid{grid-template-columns:1fr;}
-  .form-field.full{grid-column:1;}
+  /* As regras de grid para o formulário foram removidas */
 }
 @media(min-width:601px) and (max-width:900px){
   .top-cards{grid-template-columns:repeat(3,1fr);}
@@ -169,7 +147,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   <div class="topbar">
     <h1>DASH <span>FINA FER</span></h1>
     <div class="topbar-btns">
-      <button class="btn-novo" onclick="abrirModal()">+ NOVO LANÇAMENTO</button>
+      <!-- O botão "Novo Lançamento" foi removido -->
       <button class="reload" onclick="carregarDados()">↺ ATUALIZAR</button>
       <button class="reload" onclick="logout()">SAIR</button>
     </div>
@@ -242,68 +220,11 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   </div>
 </div>
 
-<!-- MODAL NOVO LANÇAMENTO -->
-<div id="modal-overlay">
-  <div class="modal-box">
-    <button class="modal-close" onclick="fecharModal()">✕</button>
-    <div class="modal-title">+ Novo Lançamento</div>
-    <div class="form-grid">
-      <div class="form-field">
-        <label>Data</label>
-        <input type="date" id="f-data"/>
-      </div>
-      <div class="form-field">
-        <label>Data Comp</label>
-        <input type="date" id="f-datacomp"/>
-      </div>
-      <div class="form-field full">
-        <label>Descrição</label>
-        <input type="text" id="f-desc" placeholder="Ex: Pagamento fornecedor"/>
-      </div>
-      <div class="form-field">
-        <label>Categoria</label>
-        <select id="f-cat"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Grupo</label>
-        <select id="f-grupo"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Subgrupo</label>
-        <select id="f-subgrupo"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Tipo Pgto</label>
-        <select id="f-tipopgto"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Banco</label>
-        <select id="f-banco"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Status</label>
-        <select id="f-status"><option value="">Selecione...</option></select>
-      </div>
-      <div class="form-field">
-        <label>Valor (R$)</label>
-        <input type="number" id="f-valor" step="0.01" min="0" placeholder="0,00"/>
-      </div>
-      <div class="form-field full">
-        <label>Obs</label>
-        <textarea id="f-obs" placeholder="Observações (opcional)"></textarea>
-      </div>
-    </div>
-    <div id="form-err"></div>
-    <div id="form-ok"></div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="fecharModal()">CANCELAR</button>
-      <button class="btn-salvar" id="btn-salvar" onclick="salvarLancamento()">SALVAR</button>
-    </div>
-  </div>
-</div>
+<!-- O MODAL DE NOVO LANÇAMENTO FOI REMOVIDO COMPLETAMENTE -->
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwXRQp8Vfink98V_bK7gZ2m4EwRlZxnvBdJ0FiFdTdFDe1cWoK7NDbBL74SiNYmNgN6/exec';
+// A URL da API deve ser a da sua implantação Apps Script ATIVA
+const API_URL = 'https://script.google.com/macros/s/AKfycbx3UBak-YXPQTMNw3ODTTqGfDgmpbVQsi-N7pX70OSYxxMNnxvO5MDZUSP6CuNylRne/exec';
 const CRED = { user: 'joseph', pass: '031977' };
 const BIO_KEY = 'finaferbio';
 const SESSION_KEY = 'finavsess';
@@ -446,7 +367,7 @@ async function carregarDados() {
   document.getElementById('dash').style.display = 'none';
   document.getElementById('load-err').textContent = '';
   try {
-    const res  = await fetch(API_URL);
+    const res  = await fetch(API_URL); // Chamada principal para os dados do dashboard
     const json = await res.json();
     const rows = json.rows || [];
     if (!rows.length) throw new Error('Nenhum dado retornado.');
@@ -668,96 +589,7 @@ function selectSub(g, s, tr) {
   card.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-// ===================== MODAL =====================
-async function abrirModal() {
-  document.getElementById('form-err').textContent = '';
-  document.getElementById('form-ok').textContent = '';
-  document.getElementById('modal-overlay').classList.add('open');
-  await carregarListas();
-}
-
-function fecharModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-
-async function carregarListas() {
-  try {
-    const res  = await fetch(API_URL + '?action=getListas');
-    const json = await res.json();
-    const L    = json.listas || {};
-    preencherSelect('f-cat',     L['CATEGORIA']  || []);
-    preencherSelect('f-grupo',   L['GRUPO']      || []);
-    preencherSelect('f-subgrupo',L['SUBGRUPO']   || []);
-    preencherSelect('f-tipopgto',L['TIPO PGTO']  || L['TIPOPGTO'] || []);
-    preencherSelect('f-banco',   L['BANCO']      || []);
-    preencherSelect('f-status',  L['STATUS']     || []);
-  } catch(e) {
-    document.getElementById('form-err').textContent = 'Erro ao carregar listas: ' + e.message;
-  }
-}
-
-function preencherSelect(id, opcoes) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = '<option value="">Selecione...</option>';
-  opcoes.forEach(o => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    opt.textContent = o;
-    sel.appendChild(opt);
-  });
-}
-
-async function salvarLancamento() {
-  const err = document.getElementById('form-err');
-  const ok  = document.getElementById('form-ok');
-  const btn = document.getElementById('btn-salvar');
-  err.textContent = '';
-  ok.textContent  = '';
-
-  const dados = {
-    'DATA':       document.getElementById('f-data').value,
-    'DATA COMP':  document.getElementById('f-datacomp').value,
-    'DESCRICAO':  document.getElementById('f-desc').value.trim(),
-    'CATEGORIA':  document.getElementById('f-cat').value,
-    'GRUPO':      document.getElementById('f-grupo').value,
-    'SUBGRUPO':   document.getElementById('f-subgrupo').value,
-    'TIPO PGTO':  document.getElementById('f-tipopgto').value,
-    'BANCO':      document.getElementById('f-banco').value,
-    'STATUS':     document.getElementById('f-status').value,
-    'VALOR':      parseFloat(document.getElementById('f-valor').value) || 0,
-    'OBS':        document.getElementById('f-obs').value.trim(),
-  };
-
-  if (!dados['DATA'])      { err.textContent = 'Informe a data.'; return; }
-  if (!dados['DESCRICAO']) { err.textContent = 'Informe a descrição.'; return; }
-  if (!dados['CATEGORIA']) { err.textContent = 'Selecione a categoria.'; return; }
-  if (!dados['VALOR'])     { err.textContent = 'Informe o valor.'; return; }
-
-  btn.disabled = true;
-  btn.textContent = 'SALVANDO...';
-  try {
-    const res  = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'inserir', dados })
-    });
-    const json = await res.json();
-    if (json.ok) {
-      ok.textContent = 'Lançamento salvo com sucesso!';
-      setTimeout(() => { fecharModal(); carregarDados(); }, 1500);
-    } else {
-      err.textContent = 'Erro ao salvar: ' + (json.erro || 'tente novamente.');
-    }
-  } catch(e) {
-    err.textContent = 'Erro de conexão: ' + e.message;
-  }
-  btn.disabled = false;
-  btn.textContent = 'SALVAR';
-}
-
-// fechar modal clicando fora
-document.getElementById('modal-overlay').addEventListener('click', function(e) {
-  if (e.target === this) fecharModal();
-});
+// As funções e o event listener do modal foram removidos
 </script>
 </body>
 </html>
