@@ -3,22 +3,45 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dash Fina Fer 2026</title>
+<title>Fina Fer 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e0e0e0;min-height:100vh;}
-#loading-area{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;padding:24px;text-align:center;}
+
+/* LOGIN */
+#login-area{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.login-box{background:#161b27;border:1px solid #1e2535;border-radius:18px;padding:36px 32px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:18px;}
+.login-logo{text-align:center;font-size:.75rem;letter-spacing:3px;text-transform:uppercase;color:#555;}
+.login-logo span{color:#7c6cf7;}
+.login-title{text-align:center;font-size:1rem;font-weight:700;color:#e0e0e0;}
+.login-field{display:flex;flex-direction:column;gap:6px;}
+.login-field label{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:#555;}
+.login-field input{background:#0d1117;border:1px solid #2a2d3e;border-radius:8px;padding:10px 14px;color:#e0e0e0;font-size:.9rem;outline:none;transition:border .2s;font-family:inherit;}
+.login-field input:focus{border-color:#7c6cf7;}
+.btn-primary{background:#7c6cf7;color:#fff;border:none;border-radius:10px;padding:12px;font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;font-family:inherit;}
+.btn-primary:hover{opacity:.85;}
+.btn-bio{background:#1e2535;color:#aaa;border:1px solid #2a2d3e;border-radius:10px;padding:10px;font-size:.75rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-bio:hover{border-color:#7c6cf7;color:#7c6cf7;}
+#login-err{color:#f87171;font-size:.75rem;text-align:center;min-height:1em;}
+
+/* LOADING */
+#loading-area{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:16px;padding:24px;text-align:center;}
 .loading-icon{font-size:2.5rem;animation:spin 2s linear infinite;}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg)}}
 .loading-title{font-size:.9rem;color:#555;letter-spacing:2px;text-transform:uppercase;}
 #load-err{color:#f87171;font-size:.8rem;max-width:400px;}
+
+/* DASH */
 #dash{display:none;padding:16px;}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
 h1{font-size:1rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#555;}
 h1 span{color:#7c6cf7;}
-.reload{background:none;border:1px solid #2a2d3e;color:#555;border-radius:8px;padding:6px 14px;font-size:.72rem;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap;}
+.topbar-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.reload{background:none;border:1px solid #2a2d3e;color:#555;border-radius:8px;padding:6px 14px;font-size:.72rem;cursor:pointer;letter-spacing:1px;transition:all .2s;white-space:nowrap;font-family:inherit;}
 .reload:hover{border-color:#7c6cf7;color:#7c6cf7;}
+.btn-novo{background:#7c6cf7;color:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .2s;white-space:nowrap;font-family:inherit;}
+.btn-novo:hover{opacity:.85;}
 .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .filter-label{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:#444;white-space:nowrap;}
 .fpill{font-size:.65rem;text-transform:uppercase;letter-spacing:.8px;padding:5px 12px;border-radius:20px;cursor:pointer;border:1px solid #2a2d3e;background:transparent;color:#555;transition:all .2s;font-family:inherit;}
@@ -66,6 +89,31 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 #trans-table .td-desc{color:#ccc;}
 #trans-table .td-obs{color:#444;font-size:.7rem;font-style:italic;max-width:160px;}
 #trans-table tbody tr{cursor:default;}
+
+/* MODAL FORMULÁRIO */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+#modal-overlay.open{display:flex;}
+.modal-box{background:#161b27;border:1px solid #2a2d3e;border-radius:18px;padding:28px 24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-title{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:#7c6cf7;margin-bottom:20px;font-weight:700;}
+.modal-close{position:absolute;top:16px;right:20px;background:none;border:none;color:#555;font-size:1.2rem;cursor:pointer;line-height:1;}
+.modal-close:hover{color:#e0e0e0;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-field{display:flex;flex-direction:column;gap:5px;}
+.form-field.full{grid-column:1/-1;}
+.form-field label{font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:#555;}
+.form-field input,.form-field select,.form-field textarea{background:#0d1117;border:1px solid #2a2d3e;border-radius:8px;padding:9px 12px;color:#e0e0e0;font-size:.82rem;outline:none;transition:border .2s;font-family:inherit;width:100%;}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:#7c6cf7;}
+.form-field select option{background:#161b27;}
+.form-field textarea{resize:vertical;min-height:60px;}
+.modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+.btn-cancel{background:none;border:1px solid #2a2d3e;color:#555;border-radius:8px;padding:9px 20px;font-size:.72rem;cursor:pointer;letter-spacing:1px;font-family:inherit;transition:all .2s;}
+.btn-cancel:hover{border-color:#555;color:#aaa;}
+.btn-salvar{background:#7c6cf7;color:#fff;border:none;border-radius:8px;padding:9px 24px;font-size:.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .2s;font-family:inherit;}
+.btn-salvar:hover{opacity:.85;}
+.btn-salvar:disabled{opacity:.4;cursor:not-allowed;}
+#form-err{color:#f87171;font-size:.72rem;text-align:right;min-height:1em;margin-top:4px;}
+#form-ok{color:#4ade80;font-size:.72rem;text-align:right;min-height:1em;margin-top:4px;}
+
 @media(max-width:600px){
   #dash{padding:12px;}
   .top-cards{grid-template-columns:1fr;gap:10px;}
@@ -76,6 +124,8 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   .filter-bar{gap:6px;}
   #trans-table .td-obs{display:none;}
   thead th.col-obs{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-field.full{grid-column:1;}
 }
 @media(min-width:601px) and (max-width:900px){
   .top-cards{grid-template-columns:repeat(3,1fr);}
@@ -87,6 +137,26 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="login-area">
+  <div class="login-box">
+    <div class="login-logo">DASH <span>FINA FER</span></div>
+    <div class="login-title">Acesso ao Sistema</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="inp-user" autocomplete="username" placeholder="usuário"/>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="inp-pass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    </div>
+    <div id="login-err"></div>
+    <button class="btn-primary" onclick="fazerLogin()">ENTRAR</button>
+    <button class="btn-bio" id="btn-bio" style="display:none" onclick="loginBio()">🔒 Entrar com Biometria</button>
+  </div>
+</div>
+
+<!-- LOADING -->
 <div id="loading-area">
   <h1>DASH <span>FINA FER</span></h1>
   <div class="loading-icon">⚙️</div>
@@ -94,10 +164,15 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   <div id="load-err"></div>
 </div>
 
+<!-- DASH -->
 <div id="dash">
   <div class="topbar">
     <h1>DASH <span>FINA FER</span></h1>
-    <button class="reload" onclick="iniciar()">↺ ATUALIZAR</button>
+    <div class="topbar-btns">
+      <button class="btn-novo" onclick="abrirModal()">+ NOVO LANÇAMENTO</button>
+      <button class="reload" onclick="carregarDados()">↺ ATUALIZAR</button>
+      <button class="reload" onclick="logout()">SAIR</button>
+    </div>
   </div>
 
   <div class="filter-bar">
@@ -167,8 +242,71 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   </div>
 </div>
 
+<!-- MODAL NOVO LANÇAMENTO -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <button class="modal-close" onclick="fecharModal()">✕</button>
+    <div class="modal-title">+ Novo Lançamento</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Data</label>
+        <input type="date" id="f-data"/>
+      </div>
+      <div class="form-field">
+        <label>Data Comp</label>
+        <input type="date" id="f-datacomp"/>
+      </div>
+      <div class="form-field full">
+        <label>Descrição</label>
+        <input type="text" id="f-desc" placeholder="Ex: Pagamento fornecedor"/>
+      </div>
+      <div class="form-field">
+        <label>Categoria</label>
+        <select id="f-cat"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Grupo</label>
+        <select id="f-grupo"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Subgrupo</label>
+        <select id="f-subgrupo"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Tipo Pgto</label>
+        <select id="f-tipopgto"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Banco</label>
+        <select id="f-banco"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Status</label>
+        <select id="f-status"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-field">
+        <label>Valor (R$)</label>
+        <input type="number" id="f-valor" step="0.01" min="0" placeholder="0,00"/>
+      </div>
+      <div class="form-field full">
+        <label>Obs</label>
+        <textarea id="f-obs" placeholder="Observações (opcional)"></textarea>
+      </div>
+    </div>
+    <div id="form-err"></div>
+    <div id="form-ok"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharModal()">CANCELAR</button>
+      <button class="btn-salvar" id="btn-salvar" onclick="salvarLancamento()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbxA2Se7pS5o2TZncfCJDtA3UA1jeesG9b5HDm7Wep1YRScfwWp4E1j7LXMxNEiVEQAh/exec';
+const CRED = { user: 'joseph', pass: '031977' };
+const BIO_KEY = 'finaferbio';
+const SESSION_KEY = 'finavsess';
 
 const MES_ORD = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MES_NM  = {jan:'Janeiro',fev:'Fevereiro',mar:'Março',abr:'Abril',mai:'Maio',jun:'Junho',jul:'Julho',ago:'Agosto',set:'Setembro',out:'Outubro',nov:'Novembro',dez:'Dezembro'};
@@ -187,20 +325,123 @@ function fmtData(s) {
   const str = String(s).trim();
   if (str.indexOf('T') !== -1) {
     const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
-    }
+    if (!isNaN(d.getTime())) return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth()+1).padStart(2,'0');
   }
   if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
     const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
-    }
+    if (!isNaN(d.getTime())) return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth()+1).padStart(2,'0');
   }
   return str;
 }
 
-async function iniciar() {
+// ===================== AUTH =====================
+window.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    iniciarSistema();
+  } else {
+    document.getElementById('login-area').style.display = 'flex';
+    verificarBio();
+  }
+});
+
+function fazerLogin() {
+  const u = document.getElementById('inp-user').value.trim();
+  const p = document.getElementById('inp-pass').value;
+  const err = document.getElementById('login-err');
+  if (u === CRED.user && p === CRED.pass) {
+    err.textContent = '';
+    sessionStorage.setItem(SESSION_KEY, '1');
+    oferecerRegistroBio();
+    iniciarSistema();
+  } else {
+    err.textContent = 'Usuário ou senha incorretos.';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+// ===================== BIOMETRIA =====================
+async function verificarBio() {
+  if (!window.PublicKeyCredential) return;
+  const salvo = localStorage.getItem(BIO_KEY);
+  if (!salvo) return;
+  document.getElementById('btn-bio').style.display = 'flex';
+}
+
+async function loginBio() {
+  const err = document.getElementById('login-err');
+  try {
+    const salvo = JSON.parse(localStorage.getItem(BIO_KEY));
+    const credId = base64ToBuffer(salvo.id);
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ type: 'public-key', id: credId }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    if (assertion) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      iniciarSistema();
+    }
+  } catch(e) {
+    err.textContent = 'Biometria falhou. Use usuário e senha.';
+  }
+}
+
+async function oferecerRegistroBio() {
+  if (!window.PublicKeyCredential) return;
+  const jaRegistrado = localStorage.getItem(BIO_KEY);
+  if (jaRegistrado) return;
+  const suporta = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  if (!suporta) return;
+  const ok = confirm('Deseja ativar o login por biometria neste dispositivo?');
+  if (!ok) return;
+  try {
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const userId = new Uint8Array(16);
+    crypto.getRandomValues(userId);
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Fina Fer' },
+        user: { id: userId, name: CRED.user, displayName: 'Joseph' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    localStorage.setItem(BIO_KEY, JSON.stringify({ id: bufferToBase64(cred.rawId) }));
+    alert('Biometria ativada! No próximo acesso use o botão de biometria.');
+  } catch(e) {
+    // silencioso se o usuário cancelar
+  }
+}
+
+function bufferToBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function base64ToBuffer(b64) {
+  const bin = atob(b64);
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return buf.buffer;
+}
+
+// ===================== SISTEMA =====================
+function iniciarSistema() {
+  document.getElementById('login-area').style.display = 'none';
+  carregarDados();
+}
+
+async function carregarDados() {
   document.getElementById('loading-area').style.display = 'flex';
   document.getElementById('dash').style.display = 'none';
   document.getElementById('load-err').textContent = '';
@@ -218,6 +459,7 @@ async function iniciar() {
   }
 }
 
+// ===================== PARSE =====================
 function parse(rows) {
   const monthly = {}, gD = {}, gR = {}, rawRows = [];
   rows.forEach(row => {
@@ -253,6 +495,7 @@ function parse(rows) {
   return {mesesData, periodo: meses.map(m => MES_NM[m] || m).join(' · '), despesa: toArr(gD), receita: toArr(gR), rawRows};
 }
 
+// ===================== RENDER =====================
 function render() {
   const {mesesData} = DATA;
   filtroMes = null;
@@ -271,20 +514,20 @@ function render() {
     data: {
       labels: mesesData.map(m => MES_NM[m.mes] || m.mes),
       datasets: [
-        {label:'Entradas',        data: mesesData.map(m => m.e),     backgroundColor: 'rgba(74,222,128,.7)',  borderRadius: 4, borderSkipped: false},
-        {label:'Saídas',          data: mesesData.map(m => m.s),     backgroundColor: 'rgba(248,113,113,.7)', borderRadius: 4, borderSkipped: false},
-        {label:'Saldo Acumulado', data: mesesData.map(m => m.saldo), backgroundColor: mesesData.map(m => m.saldo >= 0 ? 'rgba(167,139,250,.8)' : 'rgba(239,68,68,.6)'), borderRadius: 4, borderSkipped: false},
+        {label:'Entradas',        data: mesesData.map(m => m.e),     backgroundColor:'rgba(74,222,128,.7)',  borderRadius:4, borderSkipped:false},
+        {label:'Saídas',          data: mesesData.map(m => m.s),     backgroundColor:'rgba(248,113,113,.7)', borderRadius:4, borderSkipped:false},
+        {label:'Saldo Acumulado', data: mesesData.map(m => m.saldo), backgroundColor: mesesData.map(m => m.saldo >= 0 ? 'rgba(167,139,250,.8)' : 'rgba(239,68,68,.6)'), borderRadius:4, borderSkipped:false},
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: {labels: {color: '#666', font: {size: 10}, boxWidth: 12}},
-        tooltip: {callbacks: {label: c => ' ' + R(c.parsed.y)}}
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#666',font:{size:10},boxWidth:12}},
+        tooltip:{callbacks:{label: c => ' ' + R(c.parsed.y)}}
       },
-      scales: {
-        x: {grid: {color: '#1e2535'}, ticks: {color: '#666', font: {size: 9}, maxRotation: 45}},
-        y: {grid: {color: '#1e2535'}, ticks: {color: '#666', font: {size: 9}, callback: v => 'R$' + (v / 1000).toFixed(0) + 'k'}}
+      scales:{
+        x:{grid:{color:'#1e2535'},ticks:{color:'#666',font:{size:9},maxRotation:45}},
+        y:{grid:{color:'#1e2535'},ticks:{color:'#666',font:{size:9},callback: v => 'R$'+(v/1000).toFixed(0)+'k'}}
       }
     }
   });
@@ -304,7 +547,7 @@ function setFiltro(mes, btn) {
     chartInst.data.datasets.forEach(ds => {
       ds.backgroundColor = ds.data.map((_, i) => {
         const base = ds.label === 'Entradas' ? '74,222,128' : ds.label === 'Saídas' ? '248,113,113' : (mesesData[i].saldo >= 0 ? '167,139,250' : '239,68,68');
-        return i === idx ? 'rgba(' + base + ',1)' : 'rgba(' + base + ',.15)';
+        return i === idx ? 'rgba('+base+',1)' : 'rgba('+base+',.15)';
       });
     });
   } else {
@@ -321,7 +564,7 @@ function updateCards(mes) {
   if (!mes) {
     const totalE = mesesData.reduce((a, m) => a + m.e, 0);
     const totalS = mesesData.reduce((a, m) => a + m.s, 0);
-    const saldoF = mesesData.length ? mesesData[mesesData.length - 1].saldo : 0;
+    const saldoF = mesesData.length ? mesesData[mesesData.length-1].saldo : 0;
     document.getElementById('v-e').textContent = R(totalE);
     document.getElementById('v-s').textContent = R(totalS);
     document.getElementById('sub-e').textContent = periodo;
@@ -366,9 +609,9 @@ function renderGrupos() {
     const pct = (g.total / max * 100).toFixed(0);
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td><span class="dot" style="background:' + g.cor + '"></span>' + g.nome + '</td>' +
-      '<td><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + g.cor + '"></div></div></td>' +
-      '<td>' + R(g.total) + '</td>';
+      '<td><span class="dot" style="background:'+g.cor+'"></span>'+g.nome+'</td>'+
+      '<td><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:'+g.cor+'"></div></div></td>'+
+      '<td>'+R(g.total)+'</td>';
     tr.onclick = () => selectGrupo(g, tr);
     tbody.appendChild(tr);
   });
@@ -386,9 +629,9 @@ function selectGrupo(g, tr) {
     const pct = (s.valor / max * 100).toFixed(0);
     const tr2 = document.createElement('tr');
     tr2.innerHTML =
-      '<td><span class="dot" style="background:' + g.cor + '"></span>' + s.nome + '</td>' +
-      '<td><div class="bar-bg"><div class="bar-fill" style="width:' + pct + '%;background:' + g.cor + '"></div></div></td>' +
-      '<td>' + R(s.valor) + '</td>';
+      '<td><span class="dot" style="background:'+g.cor+'"></span>'+s.nome+'</td>'+
+      '<td><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%;background:'+g.cor+'"></div></div></td>'+
+      '<td>'+R(s.valor)+'</td>';
     tr2.onclick = () => selectSub(g, s, tr2);
     tbody.appendChild(tr2);
   });
@@ -412,20 +655,109 @@ function selectSub(g, s, tr) {
   rows.forEach(r => {
     const obs = r.obs && r.obs.toLowerCase() !== 'nan' ? r.obs : '';
     tbody.innerHTML +=
-      '<tr>' +
-      '<td class="td-data">' + (MES_NM[r.mes] || r.mes) + '</td>' +
-      '<td class="td-data">' + r.data + '</td>' +
-      '<td class="td-desc">' + r.desc + '</td>' +
-      '<td class="td-obs">' + obs + '</td>' +
-      '<td>' + R(r.val) + '</td>' +
+      '<tr>'+
+      '<td class="td-data">'+(MES_NM[r.mes]||r.mes)+'</td>'+
+      '<td class="td-data">'+r.data+'</td>'+
+      '<td class="td-desc">'+r.desc+'</td>'+
+      '<td class="td-obs">'+obs+'</td>'+
+      '<td>'+R(r.val)+'</td>'+
       '</tr>';
   });
   const card = document.getElementById('trans-card');
   card.style.display = 'block';
-  card.scrollIntoView({behavior: 'smooth', block: 'start'});
+  card.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-iniciar();
+// ===================== MODAL =====================
+async function abrirModal() {
+  document.getElementById('form-err').textContent = '';
+  document.getElementById('form-ok').textContent = '';
+  document.getElementById('modal-overlay').classList.add('open');
+  await carregarListas();
+}
+
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+async function carregarListas() {
+  try {
+    const res  = await fetch(API_URL + '?action=getListas');
+    const json = await res.json();
+    const L    = json.listas || {};
+    preencherSelect('f-cat',     L['CATEGORIA']  || []);
+    preencherSelect('f-grupo',   L['GRUPO']      || []);
+    preencherSelect('f-subgrupo',L['SUBGRUPO']   || []);
+    preencherSelect('f-tipopgto',L['TIPO PGTO']  || L['TIPOPGTO'] || []);
+    preencherSelect('f-banco',   L['BANCO']      || []);
+    preencherSelect('f-status',  L['STATUS']     || []);
+  } catch(e) {
+    document.getElementById('form-err').textContent = 'Erro ao carregar listas: ' + e.message;
+  }
+}
+
+function preencherSelect(id, opcoes) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  opcoes.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o;
+    opt.textContent = o;
+    sel.appendChild(opt);
+  });
+}
+
+async function salvarLancamento() {
+  const err = document.getElementById('form-err');
+  const ok  = document.getElementById('form-ok');
+  const btn = document.getElementById('btn-salvar');
+  err.textContent = '';
+  ok.textContent  = '';
+
+  const dados = {
+    'DATA':       document.getElementById('f-data').value,
+    'DATA COMP':  document.getElementById('f-datacomp').value,
+    'DESCRICAO':  document.getElementById('f-desc').value.trim(),
+    'CATEGORIA':  document.getElementById('f-cat').value,
+    'GRUPO':      document.getElementById('f-grupo').value,
+    'SUBGRUPO':   document.getElementById('f-subgrupo').value,
+    'TIPO PGTO':  document.getElementById('f-tipopgto').value,
+    'BANCO':      document.getElementById('f-banco').value,
+    'STATUS':     document.getElementById('f-status').value,
+    'VALOR':      parseFloat(document.getElementById('f-valor').value) || 0,
+    'OBS':        document.getElementById('f-obs').value.trim(),
+  };
+
+  if (!dados['DATA'])      { err.textContent = 'Informe a data.'; return; }
+  if (!dados['DESCRICAO']) { err.textContent = 'Informe a descrição.'; return; }
+  if (!dados['CATEGORIA']) { err.textContent = 'Selecione a categoria.'; return; }
+  if (!dados['VALOR'])     { err.textContent = 'Informe o valor.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'SALVANDO...';
+  try {
+    const res  = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'inserir', dados })
+    });
+    const json = await res.json();
+    if (json.ok) {
+      ok.textContent = 'Lançamento salvo com sucesso!';
+      setTimeout(() => { fecharModal(); carregarDados(); }, 1500);
+    } else {
+      err.textContent = 'Erro ao salvar: ' + (json.erro || 'tente novamente.');
+    }
+  } catch(e) {
+    err.textContent = 'Erro de conexão: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'SALVAR';
+}
+
+// fechar modal clicando fora
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) fecharModal();
+});
 </script>
 </body>
 </html>
