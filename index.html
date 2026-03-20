@@ -185,23 +185,20 @@ const cleanStr = s => { const t = String(s ?? '').trim(); return (t === '' || t.
 function fmtData(s) {
   if (!s || s === '—') return '—';
   const str = String(s).trim();
-  // Se a string já contém um ano (ex: "YYYY-MM-DD" ou "DD/MM/YYYY")
-  if (str.length >= 10 && (str[4] === '-' || str[2] === '/')) {
-    const parts = str.includes('-') ? str.split('-') : str.split('/');
-    // Tenta criar uma data no formato YYYY-MM-DD para garantir que o ano seja considerado
-    const year = parts.length === 3 ? parts[2] : '2000'; // Usa 2000 como padrão se o ano não estiver na string
-    const month = parts.length === 3 ? parts[1] : parts[1];
-    const day = parts.length === 3 ? parts[0] : parts[0];
-    const d = new Date(`${year}-${month}-${day}T12:00:00Z`); // Adiciona T12:00:00Z para evitar problemas de fuso horário
+  if (str.indexOf('T') !== -1) {
+    const d = new Date(str);
     if (!isNaN(d.getTime())) {
       return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
     }
   }
-  // Se for apenas "DD/MM" ou "MM/DD" sem ano, ou um formato desconhecido
-  // Retorna a string original, mas isso pode causar problemas na ordenação se não for "DD/MM"
+  if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
+    }
+  }
   return str;
 }
-
 
 async function iniciar() {
   document.getElementById('loading-area').style.display = 'flex';
@@ -231,14 +228,14 @@ function parse(rows) {
     const val  = parseFloat(row['VALOR'] ?? row['valor']) || 0;
     const desc = cleanStr(row['DESCRICAO'] ?? row['descricao']) || '—';
     const obs  = cleanStr(row['OBS'] ?? row['obs']) || '';
-    const data = cleanStr(row['DATA COMP'] ?? row['DATA'] ?? row['data']); // Mantém a data original para ordenação
+    const dataOriginal = cleanStr(row['DATA COMP'] ?? row['DATA'] ?? row['data']);
+    const dataExibicao = fmtData(dataOriginal);
 
     if (!mes || !cat || !val) return;
     const catUp = cat.toUpperCase();
     if (catUp !== 'RECEITA' && catUp !== 'DESPESA') return;
 
-    // Adiciona a data formatada para exibição, mas mantém a original para ordenação
-    rawRows.push({mes, cat: catUp, grp, sub, val, desc, obs, dataOriginal: data, dataExibicao: fmtData(data)});
+    rawRows.push({mes, cat: catUp, grp, sub, val, desc, obs, dataOriginal, dataExibicao});
 
     if (!monthly[mes]) monthly[mes] = {e: 0, s: 0};
     const target = catUp === 'RECEITA' ? gR : gD;
@@ -408,23 +405,16 @@ function selectSub(g, s, tr) {
 
   const rows = DATA.rawRows.filter(r => r.cat === cat && r.grp === g.nome && r.sub === s.nome)
     .sort((a, b) => {
-      // Função auxiliar para criar um objeto Date a partir de "DD/MM" e o mês textual
-      const createDateForSort = (dataStr, mesText) => {
-        const [day, monthNum] = dataStr.split('/').map(Number);
-        // MES_ORD é ['jan','fev',...,'dez'], então o índice é o número do mês - 1
-        const monthIndex = MES_ORD.indexOf(mesText);
-        // Usamos um ano fixo (ex: 2000) porque o ano não está nos dados,
-        // mas precisamos de um Date válido para comparação.
-        // O importante é que o ano seja o mesmo para todas as datas comparadas.
-        return new Date(2000, monthIndex, day);
-      };
-
-      const dateA = createDateForSort(a.dataExibicao, a.mes);
-      const dateB = createDateForSort(b.dataExibicao, b.mes);
-
-      // Compara as datas completas (mês e dia) em ordem decrescente
-      // dateB.getTime() - dateA.getTime() resultará em um número positivo se B for mais recente que A
-      return dateB.getTime() - dateA.getTime();
+      // 1. Comparar meses em ordem decrescente (do mais novo para o mais antigo)
+      const mesCompare = MES_ORD.indexOf(b.mes) - MES_ORD.indexOf(a.mes);
+      if (mesCompare !== 0) {
+        return mesCompare;
+      }
+      // 2. Se os meses forem iguais, comparar os dias em ordem decrescente (do mais novo para o mais antigo)
+      // r.dataExibicao já está no formato "DD/MM"
+      const diaA = parseInt(a.dataExibicao.substring(0, 2));
+      const diaB = parseInt(b.dataExibicao.substring(0, 2));
+      return diaB - diaA;
     });
 
   const total = rows.reduce((acc, r) => acc + r.val, 0);
@@ -441,7 +431,7 @@ function selectSub(g, s, tr) {
     tbody.innerHTML +=
       '<tr>' +
       '<td class="td-data">' + (MES_NM[r.mes] || r.mes) + '</td>' +
-      '<td class="td-data">' + r.dataExibicao + '</td>' + // Usa dataExibicao aqui
+      '<td class="td-data">' + r.dataExibicao + '</td>' +
       '<td class="td-desc">' + r.desc + '</td>' +
       '<td class="td-obs">' + obs + '</td>' +
       '<td>' + R(r.val) + '</td>' +
