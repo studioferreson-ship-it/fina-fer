@@ -168,7 +168,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbzXNmPfTi9Ogw1Bv5cBgSQQzuPuWUTsz1Lh0FVl4L9_8CV43xtbHUtIvnqci4RbFh4s/exec'; // ESTA É A NOVA URL ATUALIZADA
+const API_URL = 'https://script.google.com/macros/s/AKfycbypTNUuVYxgI045TtFviRug3F4jYvLUMGjVVIcepd9nkoYIGSrtUSERsyL-uHAsiWZr/exec'; // Sua URL da API atualizada
 
 const MES_ORD = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const MES_NM  = {jan:'Janeiro',fev:'Fevereiro',mar:'Março',abr:'Abril',mai:'Maio',jun:'Junho',jul:'Julho',ago:'Agosto',set:'Setembro',out:'Outubro',nov:'Novembro',dez:'Dezembro'};
@@ -182,23 +182,25 @@ let filtroMes = null;
 const R = v => 'R$ ' + (+v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const cleanStr = s => { const t = String(s ?? '').trim(); return (t === '' || t.toLowerCase() === 'nan') ? null : t; };
 
-function fmtData(s) {
-  if (!s || s === '—') return '—';
-  const str = String(s).trim();
-  if (str.indexOf('T') !== -1) {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
-    }
+// Função auxiliar para converter a data "DD/MM" para um formato comparável (MM/DD) ou um objeto Date
+function parseDateForSort(dateStr, mesStr) {
+  if (!dateStr || dateStr === '—') {
+    // Se a data for inválida, tentamos usar o mês para uma ordenação aproximada
+    const mesIndex = MES_ORD.indexOf(mesStr.toLowerCase());
+    return new Date(2000, mesIndex, 1); // Ano fictício, mês real, dia 1
   }
-  if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
-    const d = new Date(str);
-    if (!isNaN(d.getTime())) {
-      return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth() + 1).padStart(2,'0');
-    }
+  const parts = dateStr.split('/');
+  if (parts.length === 2) {
+    // Assume que o ano é o ano atual ou um ano fictício para comparação
+    // Para garantir que datas mais recentes fiquem acima, podemos usar um ano fixo alto
+    // ou tentar inferir o ano se houver no dado original.
+    // Por simplicidade, vamos usar um ano fixo para que a ordenação MM/DD funcione.
+    // Se o ano for importante, precisaríamos que ele estivesse no dado original.
+    return new Date(2026, parseInt(parts[1]) - 1, parseInt(parts[0]));
   }
-  return str;
+  return new Date(dateStr); // Tenta parsear como data completa se for o caso
 }
+
 
 async function iniciar() {
   document.getElementById('loading-area').style.display = 'flex';
@@ -399,7 +401,12 @@ function selectSub(g, s, tr) {
   tr.classList.add('active');
   const cat = tipoAtual === 'despesa' ? 'DESPESA' : 'RECEITA';
   const rows = DATA.rawRows.filter(r => r.cat === cat && r.grp === g.nome && r.sub === s.nome)
-    .sort((a, b) => MES_ORD.indexOf(a.mes) - MES_ORD.indexOf(b.mes));
+    .sort((a, b) => {
+      // Ordena de forma decrescente pela data
+      const dateA = parseDateForSort(a.data, a.mes);
+      const dateB = parseDateForSort(b.data, b.mes);
+      return dateB.getTime() - dateA.getTime(); // Mais recente primeiro
+    });
   const total = rows.reduce((acc, r) => acc + r.val, 0);
   document.getElementById('trans-title').textContent = 'Transações — ' + s.nome;
   const badge = document.getElementById('trans-badge');
