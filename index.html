@@ -41,7 +41,44 @@ h1 span{color:#7c6cf7;}
 .sec-title{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:#555;margin-bottom:12px;}
 .chart-wrap{position:relative;height:220px;}
 .bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.tcard{background:#161b27;border-radius:14px;padding:16px;border:1px solid #1e2535;overflow-x:auto;}
+
+/* NOVOS ESTILOS PARA OS GRÁFICOS DE ROSCA */
+.tcard-wrapper {
+  display: grid;
+  grid-template-columns: 1fr; /* Padrão para telas menores */
+  gap: 12px;
+  background:#161b27;
+  border-radius:14px;
+  padding:16px;
+  border:1px solid #1e2535;
+  overflow-x:auto;
+}
+.tcard-content {
+  min-width: 200px; /* Garante que a tabela não fique muito estreita */
+}
+.doughnut-chart-container {
+  position: relative;
+  height: 200px; /* Altura fixa para o gráfico de rosca */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px; /* Espaçamento acima do gráfico */
+}
+/* Media query para telas maiores para colocar tabela e gráfico lado a lado */
+@media(min-width:768px){
+  .tcard-wrapper {
+    grid-template-columns: 1fr 200px; /* Tabela e gráfico de 200px de largura */
+    align-items: start; /* Alinha o conteúdo ao topo */
+    overflow-x: hidden; /* Evita scroll horizontal desnecessário no wrapper */
+  }
+  .doughnut-chart-container {
+    margin-top: 0; /* Remove margem superior quando lado a lado */
+  }
+}
+/* FIM DOS NOVOS ESTILOS */
+
+.tcard{background:none;border:none;padding:0;overflow-x:auto;} /* tcard agora é apenas um container de conteúdo */
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
 .tab{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;padding:5px 14px;border-radius:20px;cursor:pointer;border:1px solid #2a2d3e;background:transparent;color:#555;transition:all .2s;font-family:inherit;}
 .tab:hover{border-color:#7c6cf7;color:#aaa;}
@@ -130,23 +167,36 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
   </div>
 
   <div class="bottom">
-    <div class="tcard">
-      <div class="tabs">
-        <button class="tab active" onclick="setTipo('receita',this)">Receitas</button>
-        <button class="tab"        onclick="setTipo('despesa',this)">Despesas</button>
+    <!-- Card de Grupos e seu Gráfico de Rosca -->
+    <div class="tcard-wrapper">
+      <div class="tcard-content">
+        <div class="tabs">
+          <button class="tab active" onclick="setTipo('receita',this)">Receitas</button>
+          <button class="tab"        onclick="setTipo('despesa',this)">Despesas</button>
+        </div>
+        <div class="sec-title" id="grupo-title">Valores por Grupo — Receitas</div>
+        <table>
+          <thead><tr><th>Grupo</th><th>Barra</th><th>Total</th></tr></thead>
+          <tbody id="tbl-grupo"></tbody>
+        </table>
       </div>
-      <div class="sec-title" id="grupo-title">Valores por Grupo — Receitas</div>
-      <table>
-        <thead><tr><th>Grupo</th><th>Barra</th><th>Total</th></tr></thead>
-        <tbody id="tbl-grupo"></tbody>
-      </table>
+      <div class="doughnut-chart-container">
+        <canvas id="chart-grupo"></canvas>
+      </div>
     </div>
-    <div class="tcard">
-      <div class="sec-title" id="sub-title">← Selecione um grupo</div>
-      <table>
-        <thead><tr><th>Subgrupo</th><th>Barra</th><th>Total</th></tr></thead>
-        <tbody id="tbl-sub"><tr><td colspan="3" class="hint">Clique em um grupo ao lado</td></tr></tbody>
-      </table>
+
+    <!-- Card de Subgrupos e seu Gráfico de Rosca -->
+    <div class="tcard-wrapper">
+      <div class="tcard-content">
+        <div class="sec-title" id="sub-title">← Selecione um grupo</div>
+        <table>
+          <thead><tr><th>Subgrupo</th><th>Barra</th><th>Total</th></tr></thead>
+          <tbody id="tbl-sub"><tr><td colspan="3" class="hint">Clique em um grupo ao lado</td></tr></tbody>
+        </table>
+      </div>
+      <div class="doughnut-chart-container">
+        <canvas id="chart-subgrupo"></canvas>
+      </div>
     </div>
   </div>
 
@@ -175,6 +225,8 @@ const MES_NM  = {jan:'Janeiro',fev:'Fevereiro',mar:'Março',abr:'Abril',mai:'Mai
 const PALETTE = ['#f87171','#60a5fa','#fb923c','#34d399','#a78bfa','#fbbf24','#38bdf8','#f472b6','#94a3b8','#4ade80'];
 
 let chartInst = null;
+let chartGrupoInst = null; // Nova instância para o gráfico de rosca de grupos
+let chartSubgrupoInst = null; // Nova instância para o gráfico de rosca de subgrupos
 let DATA      = null;
 let tipoAtual = 'receita';
 let filtroMes = null;
@@ -359,6 +411,9 @@ function setTipo(tipo, btn) {
   document.getElementById('sub-title').textContent = '← Selecione um grupo';
   document.getElementById('trans-card').style.display = 'none';
   renderGrupos();
+  // Limpa o gráfico de subgrupos ao mudar o tipo
+  if (chartSubgrupoInst) chartSubgrupoInst.destroy();
+  document.getElementById('chart-subgrupo').style.display = 'none'; // Esconde o canvas
 }
 
 function renderGrupos() {
@@ -376,6 +431,50 @@ function renderGrupos() {
     tr.onclick = () => selectGrupo(g, tr);
     tbody.appendChild(tr);
   });
+
+  // Renderiza o gráfico de rosca de grupos
+  if (chartGrupoInst) chartGrupoInst.destroy();
+  const ctx = document.getElementById('chart-grupo').getContext('2d');
+  document.getElementById('chart-grupo').style.display = 'block'; // Garante que o canvas esteja visível
+  chartGrupoInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: grupos.map(g => g.nome),
+      datasets: [{
+        data: grupos.map(g => g.total),
+        backgroundColor: grupos.map(g => g.cor),
+        borderColor: '#161b27',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false // Não exibir a legenda padrão, pois a tabela já serve como legenda
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed !== null) {
+                label += R(context.parsed);
+              }
+              return label;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Limpa o gráfico de subgrupos ao renderizar novos grupos
+  if (chartSubgrupoInst) chartSubgrupoInst.destroy();
+  document.getElementById('chart-subgrupo').style.display = 'none'; // Esconde o canvas
 }
 
 function selectGrupo(g, tr) {
@@ -395,6 +494,46 @@ function selectGrupo(g, tr) {
       '<td>' + R(s.valor) + '</td>';
     tr2.onclick = () => selectSub(g, s, tr2);
     tbody.appendChild(tr2);
+  });
+
+  // Renderiza o gráfico de rosca de subgrupos
+  if (chartSubgrupoInst) chartSubgrupoInst.destroy();
+  const ctx = document.getElementById('chart-subgrupo').getContext('2d');
+  document.getElementById('chart-subgrupo').style.display = 'block'; // Garante que o canvas esteja visível
+  chartSubgrupoInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: g.subs.map(s => s.nome),
+      datasets: [{
+        data: g.subs.map(s => s.valor),
+        backgroundColor: g.subs.map(() => g.cor), // Usa a cor do grupo pai para todos os subgrupos
+        borderColor: '#161b27',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.label || '';
+              if (label) {
+                label += ': ';
+              }
+              if (context.parsed !== null) {
+                label += R(context.parsed);
+              }
+              return label;
+            }
+          }
+        }
+      }
+    }
   });
 }
 
