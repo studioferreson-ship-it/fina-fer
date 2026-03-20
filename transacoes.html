@@ -371,6 +371,10 @@
                 return;
             }
 
+            // Define as expressões regulares fora do loop para melhor performance
+            const regexDateComp = new RegExp("^\\d{4}-\\d{2}-\\d{2}$"); // YYYY-MM-DD
+            const regexDate = new RegExp("^\\d{2}\\/\\d{2}$"); // DD/MM
+
             const sortedTransactions = transactions.sort((a, b) => {
                 const getDateValue = (row) => {
                     const dateComp = row['DATA COMP'];
@@ -378,19 +382,11 @@
                     let d = null;
 
                     // Prioriza 'DATA COMP' (YYYY-MM-DD)
-                    if (dateComp && typeof dateComp === 'string' && /
-^
-\d{4}-\d{2}-\d{2}
-$
-/.test(dateComp)) {
+                    if (dateComp && typeof dateComp === 'string' && regexDateComp.test(dateComp)) {
                         d = new Date(dateComp + 'T00:00:00'); // Assume UTC para evitar problemas de fuso horário
                     }
                     // Se 'DATA COMP' não for válida, tenta 'DATA' (DD/MM)
-                    else if (date && typeof date === 'string' && /
-^
-\d{2}\/\d{2}
-$
-/.test(date)) {
+                    else if (date && typeof date === 'string' && regexDate.test(date)) {
                         const [day, month] = date.split('/');
                         // Usa o ano atual para ordenar, se o ano não estiver na data
                         d = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day));
