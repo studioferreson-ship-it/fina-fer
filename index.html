@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dash Fina Fer 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e0e0e0;min-height:100vh;}
@@ -58,6 +59,7 @@ h1 span{color:#7c6cf7;}
 }
 .chart-doughnut-card {
   display: flex; /* Para centralizar o canvas */
+  flex-direction: column; /* Para o título ficar acima do gráfico */
   align-items: center;
   justify-content: center;
   min-height: 200px; /* Garante altura mínima para o gráfico */
@@ -69,6 +71,7 @@ h1 span{color:#7c6cf7;}
   width: 100%; /* Ocupa a largura do card */
   max-height: 200px; /* Limita a altura do gráfico */
   max-width: 200px; /* Limita a largura do gráfico para ser um círculo */
+  margin-top: 12px; /* Espaçamento entre o título e o gráfico */
 }
 
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
@@ -187,6 +190,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 
     <!-- Card do Gráfico de Rosca de Grupos -->
     <div class="chart-doughnut-card">
+      <div class="sec-title">% RELATIVO - GRUPO</div> <!-- Título adicionado -->
       <div class="doughnut-chart-container">
         <canvas id="chart-grupo"></canvas>
       </div>
@@ -203,6 +207,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 
     <!-- Card do Gráfico de Rosca de Subgrupos -->
     <div class="chart-doughnut-card">
+      <div class="sec-title">% RELATIVO - SUBGRUPO</div> <!-- Título adicionado -->
       <div class="doughnut-chart-container">
         <canvas id="chart-subgrupo"></canvas>
       </div>
@@ -227,7 +232,7 @@ tbody td:last-child{text-align:right;font-weight:600;color:#e0e0e0;white-space:n
 </div>
 
 <script>
-// API_URL CORRIGIDA
+// API_URL CORRIGIDA PARA A VERSÃO ORIGINAL
 const API_URL = 'https://script.google.com/macros/s/AKfycbzXNmPfTi9Ogw1Bv5cBgSQQzuPuWUTsz1Lh0FVl4L9_8CV43xtbHUtIvnqci4RbFh4s/exec';
 
 const MES_ORD = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -477,9 +482,22 @@ function renderGrupos() {
               return label;
             }
           }
+        },
+        datalabels: { // Configuração do plugin datalabels
+          color: '#fff',
+          font: {
+            weight: 'bold',
+            size: 10
+          },
+          formatter: (value, context) => {
+            const total = context.chart.data.datasets[0].data.reduce((sum, val) => sum + val, 0);
+            const percentage = (value / total * 100).toFixed(1) + '%';
+            return percentage;
+          }
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels] // Ativa o plugin
   });
 
   // Limpa e esconde o gráfico de subgrupos ao renderizar novos grupos
@@ -541,9 +559,22 @@ function selectGrupo(g, tr) {
               return label;
             }
           }
+        },
+        datalabels: { // Configuração do plugin datalabels
+          color: '#fff',
+          font: {
+            weight: 'bold',
+            size: 10
+          },
+          formatter: (value, context) => {
+            const total = context.chart.data.datasets[0].data.reduce((sum, val) => sum + val, 0);
+            const percentage = (value / total * 100).toFixed(1) + '%';
+            return percentage;
+          }
         }
       }
-    }
+    },
+    plugins: [ChartDataLabels] // Ativa o plugin
   });
 }
 
