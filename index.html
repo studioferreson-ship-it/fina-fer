@@ -400,17 +400,17 @@ function selectSub(g, s, tr) {
   const cat = tipoAtual === 'despesa' ? 'DESPESA' : 'RECEITA';
   const rows = DATA.rawRows.filter(r => r.cat === cat && r.grp === g.nome && r.sub === s.nome)
     .sort((a, b) => {
-      // Comparar meses em ordem decrescente
+      // 1. Comparar meses em ordem decrescente (do mais novo para o mais antigo)
       const mesCompare = MES_ORD.indexOf(b.mes) - MES_ORD.indexOf(a.mes);
       if (mesCompare !== 0) {
         return mesCompare;
       }
-      // Se os meses forem iguais, comparar os dias em ordem decrescente
+      // 2. Se os meses forem iguais, comparar os dias em ordem decrescente (do mais novo para o mais antigo)
       // Assumindo que r.data está no formato "DD/MM"
       const diaA = parseInt(a.data.substring(0, 2));
       const diaB = parseInt(b.data.substring(0, 2));
       return diaB - diaA;
-    }); // Linha 304: Alterada para ordenar por mês e dia em ordem decrescente
+    });
   const total = rows.reduce((acc, r) => acc + r.val, 0);
   document.getElementById('trans-title').textContent = 'Transações — ' + s.nome;
   const badge = document.getElementById('trans-badge');
