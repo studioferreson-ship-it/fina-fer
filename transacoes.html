@@ -213,17 +213,6 @@
     </style>
 </head>
 <body>
-
-
-
-    
-html
-
-¨K2K
-
-
-    
-    
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner"></div>
         <span>Carregando dados...</span>
@@ -316,7 +305,7 @@ html
 
     <script>
         // ATUALIZE ESTA URL COM A URL DA NOVA IMPLANTAÇÃO DO SEU Apps Script (transacoes_api.gs)
-        const API_URL_TRANSACTIONS = 'https://script.google.com/macros/s/AKfycbxSRPcDWJSp-6FDcXFcNT-PymOtFIB8BfkDmWoa6rZHCGqd-qmov5ScnevJhAXX03TV/exec';
+        const API_URL_TRANSACTIONS = 'https://script.google.com/macros/s/AKfycbxSRPcDWJSp-6FDcXFcNT-PymOtFIB8BfkDmWoa6rZHCGqd-qmov5ScnevJhAXX03TV/exec'; // Sua URL da API aqui
 
         const MES_NM = {
             'jan': 'Janeiro', 'fev': 'Fevereiro', 'mar': 'Março', 'abr': 'Abril',
@@ -382,39 +371,39 @@ html
                 return;
             }
 
-            // Sort transactions by date (assuming 'DATA' is in 'DD/MM' or 'YYYY-MM-DD' format)
-            // For 'DD/MM' format, we need to infer the year or use a placeholder for sorting.
-            // Let's assume 'DATA' is 'DD/MM' and 'DATA COMP' is 'YYYY-MM-DD' if available.
-            // We'll prioritize 'DATA COMP' for sorting if it exists and is a valid date.
             const sortedTransactions = transactions.sort((a, b) => {
                 const getDateValue = (row) => {
                     const dateComp = row['DATA COMP'];
                     const date = row['DATA'];
                     let d = null;
 
-                    if (dateComp && typeof dateComp === 'string' && dateComp.match(/
+                    // Prioriza 'DATA COMP' (YYYY-MM-DD)
+                    if (dateComp && typeof dateComp === 'string' && /
 ^
 \d{4}-\d{2}-\d{2}
 $
-/)) {
-                        d = new Date(dateComp + 'T00:00:00'); // Assume UTC to avoid timezone issues
-                    } else if (date && typeof date === 'string' && date.match(/
+/.test(dateComp)) {
+                        d = new Date(dateComp + 'T00:00:00'); // Assume UTC para evitar problemas de fuso horário
+                    }
+                    // Se 'DATA COMP' não for válida, tenta 'DATA' (DD/MM)
+                    else if (date && typeof date === 'string' && /
 ^
 \d{2}\/\d{2}
 $
-/)) {
+/.test(date)) {
                         const [day, month] = date.split('/');
-                        d = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day)); // Use current year
+                        // Usa o ano atual para ordenar, se o ano não estiver na data
+                        d = new Date(new Date().getFullYear(), parseInt(month) - 1, parseInt(day));
                     } else if (date instanceof Date) {
                         d = date;
                     }
-                    return d ? d.getTime() : 0; // Return timestamp or 0 for invalid dates
+                    return d ? d.getTime() : 0; // Retorna timestamp ou 0 para datas inválidas
                 };
 
                 const dateA = getDateValue(a);
                 const dateB = getDateValue(b);
 
-                return dateB - dateA; // Descending order (most recent first)
+                return dateB - dateA; // Ordem decrescente (mais recente primeiro)
             });
 
 
